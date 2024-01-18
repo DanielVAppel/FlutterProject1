@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -47,15 +49,14 @@ class HomeScreen extends StatelessWidget {
               },
               onSubmitted: (value) async {
                 // TODO: Implement and navigate to details screen search functionality
-                if (isUsername(value)) {
-                  // Handle username search
-                  // Fetch user's last known location
-                } else {
-                  // Handle location search
-                  // Use a geocoding service to find the location coordinates
-                  Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => const DetailsScreen(midpoint: GeoPoint(14,14),)));//This might need some editing
-                  //child: GoogleMap(), // Placeholder for Google Map widget
+                  GeoPoint? location;
+                  if (isUsername(value)) {
+                    location = await fetchUserLastLocation(value);
+                  } else {
+                    location = await getCoordinatesFromAddress(value);
+                  }
+                  if (location != null) {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => DetailsScreen(midpoint: location)));
                 };
               }),
             const Padding(
@@ -97,14 +98,18 @@ class HomeScreen extends StatelessWidget {
     }
     return null;
   }
+  Future<GeoPoint?> getCoordinatesFromAddress(String address) async {
+    final url = Uri.parse('https://maps.googleapis.com/maps/api/geocode/json?address=$address&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse['results'].isNotEmpty) {
+        final location = jsonResponse['results'][0]['geometry']['location'];
+        return GeoPoint(location['lat'], location['lng']);
+      }
+    }
+    return null;
+  }
 }
 
-// // Placeholder widget for Google Map
-// class GoogleMap extends StatelessWidget {
-//   const GoogleMap({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return const Center(child: Text('Map Placeholder'));
-//   }
-// }
