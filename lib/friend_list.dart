@@ -202,10 +202,11 @@ class FriendListState extends State<FriendList> {
       // Send a friend request
       // Add selectedUserId to the current user's friendRequests list in Firestore
       var currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        FirebaseFirestore.instance.collection('users').doc(selectedUserId).update({
+      if (currentUser != null && selectedUserId != currentUser.uid) {
+        await FirebaseFirestore.instance.collection('users').doc(selectedUserId).update({
           'friendRequests': FieldValue.arrayUnion([currentUser.uid])
         });
+        fetchFriendRequests();
       }
     }}
     Future<List<Map<String, dynamic>>> searchUsers(String searchQuery) async {
