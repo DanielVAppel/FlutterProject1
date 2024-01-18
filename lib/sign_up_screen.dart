@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
@@ -84,15 +85,27 @@ class SignUpScreen extends StatelessWidget {
                       email: _emailController.text,
                       password: _passwordController.text,
                     );
+                    // Additional step: Store the additional user details in Firestore
+                    if (userCredential.user != null) {
+                      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+                        'username': _usernameController.text,
+                        'phoneNumber': _phoneNumberController.text,
+                        'name': _nameController.text,
+                        // Add other relevant fields
+                      });
+                    }
                     // If the sign up is successful, navigate to the login_screen
                     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
                   } on FirebaseAuthException catch (e) {
+                    print("Sign up Failed");
                     // Handle different Firebase auth errors
                   } catch (e) {
                     // Handle other errors
+                    print("Sign up Failed");
                   }
                 } else {
                   // Handle the error if the passwords don't match
+                  print("Password does not match");
                 }
               },
             ),

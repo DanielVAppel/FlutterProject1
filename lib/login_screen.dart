@@ -17,6 +17,7 @@ class LoginScreen extends StatelessWidget {
         backgroundColor: Colors.redAccent, // You can set this to any color you like
         elevation: 0, // Removes shadow under the app bar
         toolbarHeight: 75, // Increase the AppBar height if needed
+        automaticallyImplyLeading: false, // Prevents the back arrow
         title: const SizedBox(
           height: 150,
           child: Center(

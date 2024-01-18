@@ -12,6 +12,7 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Midway Mapper', style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.redAccent, // Set the desired AppBar color
         toolbarHeight: 55,
+        automaticallyImplyLeading: false, // Prevents the back arrow
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.settings, size: 40),

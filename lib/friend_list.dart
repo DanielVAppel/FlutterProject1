@@ -10,17 +10,45 @@ class FriendList extends StatefulWidget {
   const FriendList({super.key});
 
   @override
-  _FriendListState createState() => _FriendListState();
+  FriendListState createState() => FriendListState();
 }
 
-class _FriendListState extends State<FriendList> {
+class FriendListState extends State<FriendList> {
   final TextEditingController _searchController = TextEditingController();
-  List<String> friends = [];//placeholder for friends list
+  List<String> friends = []; // Placeholder for friends list
+  List<String> friendRequests = []; // Placeholder for friend requests
 
   @override
   void initState() {
     super.initState();
     fetchFriendsList();
+    fetchFriendRequests();
+  }
+
+  Future<void> fetchFriendsList() async {
+    var currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        setState(() {
+          friends = List<String>.from(userData['friends'] ?? []);
+        });
+      }
+    }
+}
+
+  Future<void> fetchFriendRequests() async {
+    var currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        setState(() {
+          friendRequests = List<String>.from(userData['friendRequests'] ?? []);
+        });
+      }
+    }
   }
 
   @override
@@ -45,92 +73,149 @@ class _FriendListState extends State<FriendList> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
+            // Friend Requests Section
+            Expanded(
+              child: ListView.builder(
+                itemCount: friendRequests.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(friendRequests[index]),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.check),
+                          onPressed: () {
+                            // Accept friend request
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            // Deny friend request
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Friend Search Bar
             TextField(
               controller: _searchController,
-              decoration: const InputDecoration(labelText: 'Add Friend', labelStyle: TextStyle(
-                  fontSize: 20),
-                suffixIcon: Icon(Icons.search, size: 25,),
+              decoration: const InputDecoration(
+                labelText: 'Add Friend',
+                suffixIcon: Icon(Icons.search),
               ),
               onSubmitted: (value) async {
-                var searchResults = await searchUsers(value);
-                // TODO: Implement friend search logic
-                // You might want to update your state and display these users in a list.
-                // Users can then be added as friends by updating Firestore records.
+                await searchAndAddFriend(value, context);
               },
             ),
-            const SizedBox(height: 20), // Space between button and search bar
-            ElevatedButton(
-              child: const Text('Find Friends in Contacts',style: TextStyle(fontSize: 20,)),
-              onPressed: () async {
-                // TODO: Implement contact list permission request and friend matching logic
-                await requestContactsPermission();
-                await findFriendsInContacts();
-              },
-            ),
-            // TODO: Display the list of friends
-            // For each friend, display their name, a default user icon, and an 'X' button to remove them
+            // Friends List Section
             Expanded(
               child: ListView.builder(
                 itemCount: friends.length,
                 itemBuilder: (context, index) {
-                  String friendUsername = friends[index];
                   return ListTile(
-                    leading: const Icon(Icons.person), // Default user icon
-                    title: Text(friendUsername),
+                    title: Text(friends[index]),
                     trailing: IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () {
-                        String friendToRemove = friends[index];
-                      // Implement friend removal logic
-                        // Example: Remove 'friendToRemove' from the current user's friend list in Firestore
-                        // TODO: Remove friend from Firebase
+                        // Remove friend
                       },
-            ),
-            );
-            },
-            ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
     );
   }
-  Future<void> fetchFriendsList() async {
-    var user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      if (userDoc.exists && userDoc.data() != null) {
-        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-        setState(() {
-          friends = List<String>.from(userData['friends'] ?? []);
+  Future<void> acceptFriendRequest(String friendUserId) async {
+    var currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      // Add each other as friends
+      FirebaseFirestore.instance.collection('users').doc(currentUser.uid).update({
+        'friends': FieldValue.arrayUnion([friendUserId])
+      });
+      FirebaseFirestore.instance.collection('users').doc(friendUserId).update({
+        'friends': FieldValue.arrayUnion([currentUser.uid])
+      });
+
+      // Remove the friend request
+      FirebaseFirestore.instance.collection('users').doc(currentUser.uid).update({
+        'friendRequests': FieldValue.arrayRemove([friendUserId])
+      });
+
+      // Update local state
+      setState(() {
+        friends.add(friendUserId);
+        friendRequests.remove(friendUserId);
+      });
+    }
+  }
+
+  Future<void> denyFriendRequest(String friendUserId) async {
+    var currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      // Remove the friend request
+      FirebaseFirestore.instance.collection('users')
+          .doc(currentUser.uid)
+          .update({
+        'friendRequests': FieldValue.arrayRemove([friendUserId])
+      });
+
+      // Update local state
+      setState(() {
+        friendRequests.remove(friendUserId);
+      });
+    }}
+
+  Future<void> searchAndAddFriend(String searchQuery, BuildContext context) async {
+    var searchResults = await searchUsers(searchQuery);
+    // Assuming searchResults is a list of user documents with at least 'uid' and 'username'
+    // Check if the widget is still in the widget tree
+    if (!mounted) return;
+    // Display the search results and let the user choose a user to send a friend request
+    // For simplicity, using a dialog
+    String? selectedUserId = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: const Text('Select a user to add'),
+          children: searchResults.map((user) {
+            return SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, user['uid']),
+              child: Text(user['username']),
+            );
+          }).toList(),
+        );
+      },
+    );
+
+    if (selectedUserId != null) {
+      // Send a friend request
+      // Add selectedUserId to the current user's friendRequests list in Firestore
+      var currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        FirebaseFirestore.instance.collection('users').doc(selectedUserId).update({
+          'friendRequests': FieldValue.arrayUnion([currentUser.uid])
         });
       }
-    }
-  }
-  Future<List<Map<String, dynamic>>> searchUsers(String searchQuery) async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('username', isEqualTo: searchQuery)
-        .get();
+    }}
+    Future<List<Map<String, dynamic>>> searchUsers(String searchQuery) async {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: searchQuery)
+          .get();
 
-    return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
-  }
+      if (querySnapshot.docs.isEmpty) {
+        return []; // Return an empty list if no results
+      }
+      return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    }}
 
-  Future<void> requestContactsPermission() async {
-    var status = await Permission.contacts.status;
-    if (!status.isGranted) {
-      await Permission.contacts.request();
-    }
-  }
 
-  Future<void> findFriendsInContacts() async {
-    Iterable<Contact> contacts = await ContactsService.getContacts();
-    List<String> contactNumbers = contacts
-        .map((contact) => contact.phones?.first.value ?? '')
-        .where((number)=> number.isNotEmpty)
-        .toList();
-
-    // TODO: Use contactNumbers to find matching users in Firebase
-    // This might involve querying users collection where 'phoneNumber' is in contactNumbers
-  }
-}
