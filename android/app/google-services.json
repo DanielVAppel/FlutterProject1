@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "538887897528",
+    "project_id": "midway-mapper",
+    "storage_bucket": "midway-mapper.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538887897528:android:2526288f2f7dfb101ecf4d",
+        "android_client_info": {
+          "package_name": "com.danielappelcs4750.midwaymapper.flutter_cs4750_midway_mapper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjMwGySl-CjjD03vzoBRUf3XBRNpY9ITw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

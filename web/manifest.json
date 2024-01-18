@@ -1,0 +1,35 @@
+{
+    "name": "flutter_cs4750_midway_mapper",
+    "short_name": "flutter_cs4750_midway_mapper",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0175C2",
+    "theme_color": "#0175C2",
+    "description": "My app's name is Midway Mapper. The idea is that this app will work similarly to something like google maps, using location as its main feature in order to find the middle point between either two users or the user and a desired location, and then show both that center point, as well as the top food and entertainment/shopping places within a specified radius around that point, like a default of 5 miles but this can be both expanded or decreased as the user wants.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
