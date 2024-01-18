@@ -86,13 +86,15 @@ class FriendListState extends State<FriendList> {
                         IconButton(
                           icon: const Icon(Icons.check),
                           onPressed: () {
-                            // Accept friend request
+                            // Accept Friend Request
+                            acceptFriendRequest(friendRequests[index]);
                           },
                         ),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () {
                             // Deny friend request
+                            denyFriendRequest(friendRequests[index]);
                           },
                         ),
                       ],
