@@ -20,13 +20,47 @@ class DetailsScreen extends StatefulWidget {
 }
 class _DetailsScreenState extends State<DetailsScreen> {
   late int currentSearchRadius;
+  String cityName = '';
+  bool isLoadingCityName = false;
 
   @override
   void initState() {
     super.initState();
     currentSearchRadius = widget.defaultSearchRadius;
+    if (widget.midpoint != null) {
+      _getCityNameFromCoordinates(widget.midpoint!);
+    }
   }
+  Future<void> _getCityNameFromCoordinates(GeoPoint point) async {
+    setState(() {
+      isLoadingCityName = true;
+    });
+    final url = Uri.parse(
+      'https://maps.googleapis.com/maps/api/geocode/json?latlng=${point.latitude},${point.longitude}&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0Y',
+    );
 
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        final cityName = jsonResponse['results'][0]['address_components'].firstWhere(
+              (component) => component['types'].contains('locality'),
+        )['long_name'];
+
+        setState(() {
+          this.cityName = cityName;
+          isLoadingCityName = false;
+        });
+      } else {
+        throw Exception('Failed to get city name');
+      }
+    } catch (e) {
+      setState(() {
+        isLoadingCityName = false;
+      });
+      //TODO Handle the error, show an alert or a Snackbar
+    }
+  }
   Future<List<Place>> fetchNearbyPlaces() async {
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${widget.midpoint?.latitude},${widget.midpoint?.longitude}&radius=$currentSearchRadius&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0',
@@ -93,6 +127,15 @@ class _DetailsScreenState extends State<DetailsScreen> {
       ),
       body: Column(
         children: <Widget>[
+          isLoadingCityName
+              ? const CircularProgressIndicator() // Show loading indicator while fetching city name
+              : Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              'Your Mid-Point is: $cityName', // Display the city name
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
           Expanded(
             child: GoogleMapWidget(midpoint: widget.midpoint), // Placeholder for Google Map centered on the midpoint
           ),
@@ -118,8 +161,15 @@ class _DetailsScreenState extends State<DetailsScreen> {
                   itemCount: snapshot.data!.length,
                   itemBuilder: (context, index) {
                     final place = snapshot.data![index];
-                    return ListTile(
-                      title: Text(place.name),
+                    return Container(
+                        margin: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.5),
+                    border: Border.all(color: Colors.white),
+                    borderRadius: BorderRadius.circular(4.0),
+                    ),
+                    child: ListTile(
+                      title: Text(place.name, style: const TextStyle(color: Colors.white)),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -128,7 +178,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                           ),
                         );
                       },
-                    );
+                    ));
                   },
                 );
               },
@@ -185,7 +235,6 @@ class _SearchRadiusWidgetState extends State<SearchRadiusWidget> {
     // Set the default radius as the initial text in the TextField
     _radiusController.text = widget.defaultRadius.toString();
 
-    //currentRadius = widget.defaultRadius; // Initialize with default radius
   }
 
   @override
@@ -226,7 +275,7 @@ class _SearchRadiusWidgetState extends State<SearchRadiusWidget> {
     return TextField(
       controller: _radiusController,
       decoration: const InputDecoration(
-        labelText: 'Search Radius (miles)',
+        labelText: 'Search Radius (miles)', labelStyle: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
         border: OutlineInputBorder(),
       ),
       keyboardType: TextInputType.number,
@@ -235,22 +284,6 @@ class _SearchRadiusWidgetState extends State<SearchRadiusWidget> {
     );
   }
 }
-//       value: currentRadius,
-//       items: [1, 5, 10, 20].map((int value) {
-//         return DropdownMenuItem<int>(
-//           value: value,
-//           child: Text('$value miles'),
-//         );
-//       }).toList(),
-//       onChanged: (newValue) {
-//         setState(() {
-//           currentRadius = newValue ?? currentRadius;
-//         });
-//         widget.onRadiusChange(currentRadius);
-//       },
-//     );
-//   }
-// }
 
 class NearbyLocationsList extends StatelessWidget {
   final GeoPoint? midpoint;
@@ -260,7 +293,7 @@ class NearbyLocationsList extends StatelessWidget {
 
   // Fetch locations from Google Places API
   Future<List<Place>> fetchNearbyPlaces() async {
-    final url = Uri.parse('https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${midpoint?.latitude},${midpoint?.longitude}&radius=5&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0');
+    final url = Uri.parse('https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${midpoint?.latitude},${midpoint?.longitude}$searchRadius&type=restaurant|entertainment&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0');//TODO take this value, calculate distance from current home value, then divide by two and get that place.
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -320,5 +353,20 @@ class Place {
         json['geometry']['location']['lng'],
       ),
     );
+  }
+  Future<String> getCityNameFromCoordinates(GeoPoint point) async {
+    final url = Uri.parse(
+      'https://maps.googleapis.com/maps/api/geocode/json?latlng=${point.latitude},${point.longitude}&key=YOUR_API_KEY',
+    );
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final cityName = jsonResponse['results'][0]['address_components'].firstWhere(
+            (component) => component['types'].contains('locality'),
+      )['long_name'];
+      return cityName;
+    } else {
+      throw Exception('Failed to get city name');
+    }
   }
 }
