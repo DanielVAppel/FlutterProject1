@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:contacts_service/contacts_service.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'home_screen.dart'; // Make sure to create this Dart file
+import 'home_screen.dart';
 import 'profile_page.dart';
 
 class FriendList extends StatefulWidget {

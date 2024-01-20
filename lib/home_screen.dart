@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'details_screen.dart'; // Make sure to create this Dart file
+import 'details_screen.dart';
 import 'profile_page.dart';
 
 class HomeScreen extends StatefulWidget {

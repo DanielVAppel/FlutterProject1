@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:contacts_service/contacts_service.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
