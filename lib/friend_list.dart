@@ -73,8 +73,22 @@ class FriendListState extends State<FriendList> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
+            // Friend Search Bar
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Add Friend', labelStyle: TextStyle(
+                  fontSize: 20),
+                suffixIcon: Icon(Icons.search, size: 25,),
+              ),
+              onSubmitted: (value) async {
+                await searchAndAddFriend(value, context);
+              },
+            ),
+            const Text('Pending Friend Requests:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.redAccent)),
             // Friend Requests Section
             Expanded(
+              flex: 3, // 30% of space
               child: ListView.builder(
                 itemCount: friendRequests.length,
                 itemBuilder: (context, index) {
@@ -103,19 +117,10 @@ class FriendListState extends State<FriendList> {
                 },
               ),
             ),
-            // Friend Search Bar
-            TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Add Friend',
-                suffixIcon: Icon(Icons.search),
-              ),
-              onSubmitted: (value) async {
-                await searchAndAddFriend(value, context);
-              },
-            ),
             // Friends List Section
+            const Text('Current Friends:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.redAccent)),
             Expanded(
+              flex: 6, // 60% of space
               child: ListView.builder(
                 itemCount: friends.length,
                 itemBuilder: (context, index) {

@@ -56,6 +56,7 @@ class HomeScreen extends StatelessWidget {
                     location = await getCoordinatesFromAddress(value);
                   }
                   if (location != null) {
+                    
                     Navigator.push(context, MaterialPageRoute(builder: (context) => DetailsScreen(midpoint: location)));
                 };
               }),
