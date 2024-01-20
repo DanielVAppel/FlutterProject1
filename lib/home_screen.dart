@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +7,34 @@ import 'package:permission_handler/permission_handler.dart';
 import 'details_screen.dart'; // Make sure to create this Dart file
 import 'profile_page.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int userDefaultRadius = 5; // Fallback default value
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserDefaultRadius();
+  }
+
+  Future<void> fetchUserDefaultRadius() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        Map<String, dynamic> userData = userDoc.data()! as Map<String, dynamic>;
+        setState(() {
+          userDefaultRadius = userData['searchRadius'] ?? 5; // Assuming 'searchRadius' is stored in Firestore
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +84,7 @@ class HomeScreen extends StatelessWidget {
                   }
                   if (location != null) {
                     
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => DetailsScreen(midpoint: location)));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => DetailsScreen(midpoint: location, defaultSearchRadius: userDefaultRadius,)));
                 };
               }),
             const Padding(

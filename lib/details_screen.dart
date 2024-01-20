@@ -9,14 +9,20 @@ import 'dart:convert';
 
 class DetailsScreen extends StatelessWidget {
   final GeoPoint? midpoint; // Replace with actual type for midpoint
-  const DetailsScreen({super.key, required this.midpoint});
+  final int defaultSearchRadius; // Added field for default search radius
+  const DetailsScreen({super.key, required this.midpoint, required this.defaultSearchRadius});
 
   @override
   Widget build(BuildContext context) {
     // Assuming you have variables for the midpoint coordinates and search radius
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Details'),
+        centerTitle: true, // Center the title
+        backgroundColor: Colors.redAccent, // You can set this to any color you like
+        elevation: 0, // Removes shadow under the app bar
+        toolbarHeight: 75, // Increase the AppBar height if needed
+        //, style: TextStyle(fontSize: 50, fontWeight: FontWeight.bold)),
+        title: const Text('Details', style: TextStyle(fontSize: 50, fontWeight: FontWeight.bold),),
         leading: BackButton(onPressed: () => Navigator.pop(context)),
         actions: <Widget>[
           IconButton(
@@ -31,16 +37,19 @@ class DetailsScreen extends StatelessWidget {
       body: Column(
         children: <Widget>[
           Expanded(
-            child: GoogleMapWidget(
-                midpoint: midpoint), // Placeholder for Google Map centered on the midpoint
+            child: GoogleMapWidget(midpoint: midpoint), // Placeholder for Google Map centered on the midpoint
           ),
-          SearchRadiusWidget(onRadiusChange: (newRadius) {
+          SearchRadiusWidget(
+            defaultRadius: defaultSearchRadius,
+            onRadiusChange: (newRadius) {
             // Handle radius change
-          },),
+              // Update the nearby places list based on new radius
+
+            },),
           // Widget to display and change the search radius
           Expanded(
             child: NearbyLocationsList(
-                midpoint: midpoint), // List of nearby locations
+                midpoint: midpoint, searchRadius: defaultSearchRadius), // List of nearby locations
           ),
         ],
       ),
@@ -73,17 +82,22 @@ class GoogleMapWidget extends StatelessWidget {
 }
 
 class SearchRadiusWidget extends StatefulWidget {
+  final int defaultRadius;
   final Function(int) onRadiusChange;
 
-  const SearchRadiusWidget({super.key, required this.onRadiusChange});
+  const SearchRadiusWidget({super.key, required this.defaultRadius, required this.onRadiusChange,});
 
   @override
   _SearchRadiusWidgetState createState() => _SearchRadiusWidgetState();
 }
 
 class _SearchRadiusWidgetState extends State<SearchRadiusWidget> {
-  int currentRadius = 5;
-
+  late int currentRadius;
+  @override
+  void initState() {
+    super.initState();
+    currentRadius = widget.defaultRadius; // Initialize with default radius
+  }
   @override
   Widget build(BuildContext context) {
     return DropdownButton<int>(
@@ -106,8 +120,9 @@ class _SearchRadiusWidgetState extends State<SearchRadiusWidget> {
 
 class NearbyLocationsList extends StatelessWidget {
   final GeoPoint? midpoint;
+  final int searchRadius; // Added field for search radius
 
-  const NearbyLocationsList({Key? key, this.midpoint}) : super(key: key);
+  const NearbyLocationsList({Key? key, this.midpoint, required this.searchRadius}) : super(key: key);
 
   // Fetch locations from Google Places API
   Future<List<Place>> fetchNearbyPlaces() async {
