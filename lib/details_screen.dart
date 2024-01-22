@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -20,50 +19,52 @@ class DetailsScreen extends StatefulWidget {
 }
 class _DetailsScreenState extends State<DetailsScreen> {
   late int currentSearchRadius;
-  String cityName = '';
-  bool isLoadingCityName = false;
+  String cityName = '';// This will hold the city name once fetched
+  bool isCityNameLoading  = false;// To track if the city name is being loaded
 
   @override
   void initState() {
     super.initState();
     currentSearchRadius = widget.defaultSearchRadius;
     if (widget.midpoint != null) {
-      _getCityNameFromCoordinates(widget.midpoint!);
+      _getCityNameFromCoordinates(widget.midpoint!);// Call the method to fetch city name
     }
   }
   Future<void> _getCityNameFromCoordinates(GeoPoint point) async {
     setState(() {
-      isLoadingCityName = true;
+      isCityNameLoading = true;
     });
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/geocode/json?latlng=${point.latitude},${point.longitude}&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0Y',
     );
 
-    try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
-        final cityName = jsonResponse['results'][0]['address_components'].firstWhere(
-              (component) => component['types'].contains('locality'),
-        )['long_name'];
-
-        setState(() {
-          this.cityName = cityName;
-          isLoadingCityName = false;
-        });
+        final results = jsonResponse['results'] as List<dynamic>;
+        // Find the locality in the results
+        for (var result in results) {
+          for (var component in result['address_components']) {
+            if (component['types'].contains('locality')) {
+              setState(() {
+                cityName = component['long_name'];
+                isCityNameLoading = false;
+              });
+              return;
+            }
+          }
+        }
       } else {
-        throw Exception('Failed to get city name');
+        // Handle error or no locality found
+        setState(() {
+          isCityNameLoading = false;
+        });
       }
-    } catch (e) {
-      setState(() {
-        isLoadingCityName = false;
-      });
-      //TODO Handle the error, show an alert or a Snackbar
-    }
-  }
+
+   }
   Future<List<Place>> fetchNearbyPlaces() async {
     final url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${widget.midpoint?.latitude},${widget.midpoint?.longitude}&radius=$currentSearchRadius&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0',
+      'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${widget.midpoint?.latitude},${widget.midpoint?.longitude}&radius=${currentSearchRadius* 1609.34}&type=restaurant|entertainment&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0',
     );
     final response = await http.get(url);
 
@@ -127,18 +128,27 @@ class _DetailsScreenState extends State<DetailsScreen> {
       ),
       body: Column(
         children: <Widget>[
-          isLoadingCityName
-              ? const CircularProgressIndicator() // Show loading indicator while fetching city name
-              : Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Your Mid-Point is: $cityName', // Display the city name
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+          if (isCityNameLoading)
+            CircularProgressIndicator() // Show loading indicator while fetching city name
+          else
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Your Mid-Point is: $cityName', // Display the city name
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+          // isLoadingCityName
+          //     ? const CircularProgressIndicator() // Show loading indicator while fetching city name
+          //     : Padding(
+          //   padding: const EdgeInsets.all(8.0),
+          //   child: Text(
+          //     'Your Mid-Point is: $cityName', // Display the city name
+          //     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          //   ),
           ),
-          Expanded(
-            child: GoogleMapWidget(midpoint: widget.midpoint), // Placeholder for Google Map centered on the midpoint
-          ),
+          // Expanded(
+          //   child: GoogleMapWidget(midpoint: widget.midpoint), // Placeholder for Google Map centered on the midpoint
+          // ),
           SearchRadiusWidget(
             defaultRadius: currentSearchRadius,
             onRadiusChange: onRadiusChange,
@@ -293,7 +303,9 @@ class NearbyLocationsList extends StatelessWidget {
 
   // Fetch locations from Google Places API
   Future<List<Place>> fetchNearbyPlaces() async {
-    final url = Uri.parse('https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${midpoint?.latitude},${midpoint?.longitude}$searchRadius&type=restaurant|entertainment&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0');//TODO take this value, calculate distance from current home value, then divide by two and get that place.
+    //final url = Uri.parse('https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${midpoint?.latitude},${midpoint?.longitude}$searchRadius&type=restaurant|entertainment&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0');//TODO take this value, calculate distance from current home value, then divide by two and get that place.
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${midpoint?.latitude},${midpoint?.longitude}&radius=${searchRadius * 1609.34}&keyword=restaurant|entertainment&key=AIzaSyDdwUQbRqcF1RRsl0PKJgUNNFHpvHPLOU0',);
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
